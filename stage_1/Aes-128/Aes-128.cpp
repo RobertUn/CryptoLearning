@@ -7,6 +7,8 @@
 #include <iomanip>
 #include <cassert>
 
+#pragma once
+
 using namespace std;
 
 //  Константы
@@ -286,20 +288,36 @@ public:
     }
 };
 
+class SecureCleaner {
+public:
+    static void wipe(void* ptr, size_t size) {
+        volatile unsigned char* p = (volatile unsigned char*)ptr;
+        for (size_t i = 0; i < size; i++) {
+            p[i] = 0;
+        }
+    }
+};
+
 class AESEncryptor : public AES_128 {
 private:
     AESUntils untils;
+    SecureCleaner cleaner;
     RoundsKeys roundKeys;
     bool keysPrecomputed = false;
 
 public:
     AESEncryptor() = default;
 
+    ~AESEncryptor() {
+        cleaner.wipe(&roundKeys, sizeof(roundKeys));
+    }
+
     void setKey(const Block& sourse_key) {
         Key key = untils.convertToMatrix(sourse_key);
-        // 0. Расширяем ключ
+        // 0. Расширяем ключ и очищаем временный
         roundKeys = KeyExpansion(key);
         keysPrecomputed = true;
+        cleaner.wipe(&key, sizeof(key));
     }
 
     Block encryptBlock(const Block& plaintext) {
@@ -332,6 +350,8 @@ public:
             cout << hex << setw(2) << setfill('0') << (int)ciphertext[i] << " ";
         }
         cout << endl;
+
+        cleaner.wipe(&state, sizeof(state));
 
         return ciphertext;
     }
