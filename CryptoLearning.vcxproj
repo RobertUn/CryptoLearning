@@ -125,11 +125,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="stage_1\Aes-128.cpp" />
+    <ClCompile Include="stage_1\Aes-128\Aes-128.cpp" />
+    <ClCompile Include="stage_1\Aes-128\FileCryptor.cpp" />
+    <ClCompile Include="stage_1\Aes-128\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="testFiles\test1.txt" />
-    <Text Include="testFiles\test2.txt" />
+    <Text Include="1.txt" />
+    <Text Include="2.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

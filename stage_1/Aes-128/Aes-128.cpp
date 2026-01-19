@@ -264,7 +264,7 @@ protected:
     }
 };
 
-class AESUntils {
+class AESUtils {
 public:
     // Конвертация данных
     State convertToMatrix(const Block& block_data) {
@@ -300,7 +300,7 @@ public:
 
 class AESEncryptor : public AES_128 {
 private:
-    AESUntils untils;
+    AESUtils untils;
     SecureCleaner cleaner;
     RoundsKeys roundKeys;
     bool keysPrecomputed = false;
@@ -314,7 +314,7 @@ public:
 
     void setKey(const Block& sourse_key) {
         Key key = untils.convertToMatrix(sourse_key);
-        // 0. Расширяем ключ и очищаем временный
+        // 0. Расширяем ключ и очищаем исходный
         roundKeys = KeyExpansion(key);
         keysPrecomputed = true;
         cleaner.wipe(&key, sizeof(key));
@@ -359,18 +359,24 @@ public:
 
 class AESDecryptor : public AES_128 {
 private:
-    AESUntils untils;
+    AESUtils untils;
+    SecureCleaner cleaner;
     RoundsKeys roundKeys;
     bool keysPrecomputed = false;
 
 public:
     AESDecryptor() = default;
+    
+    ~AESDecryptor() {
+        cleaner.wipe(&roundKeys, sizeof(roundKeys));
+    }
 
     void setKey(const Block& sourse_key) {
         Key key = untils.convertToMatrix(sourse_key);
-        // 0. Расширяем ключ
+        // 0. Расширяем ключ и очищаем исходный
         roundKeys = KeyExpansion(key);
         keysPrecomputed = true;
+        cleaner.wipe(&key, sizeof(key));
     }
 
     Block decryptBlock(const Block& ciphertext) {
@@ -403,6 +409,8 @@ public:
             cout << hex << setw(2) << setfill('0') << (int)plaintext[i] << " ";
         }
         cout << endl;
+
+        cleaner.wipe(&state, sizeof(state));
 
         return plaintext;
     }

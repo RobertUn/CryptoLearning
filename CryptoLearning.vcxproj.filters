@@ -15,12 +15,22 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="stage_1\Aes-128.cpp">
+    <ClCompile Include="stage_1\Aes-128\main.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="stage_1\Aes-128\Aes-128.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="stage_1\Aes-128\FileCryptor.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="testFiles\test1.txt" />
-    <Text Include="testFiles\test2.txt" />
+    <Text Include="1.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+    <Text Include="2.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
   </ItemGroup>
 </Project>
