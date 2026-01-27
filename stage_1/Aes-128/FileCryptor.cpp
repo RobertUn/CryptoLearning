@@ -4,6 +4,7 @@
 #include <string>
 #include <filesystem>
 #include "Aes-128.cpp"
+#include <memory>
 
 #pragma once
 
@@ -169,40 +170,76 @@ public:
 
 class FileProcess {
 private:
-    string file_path;
+    string input_file_path;
+    string output_file_path;
     string mode_cryption;
     Block sourse_key;
     FileRead fr;
     FileWrite fw;
+    unique_ptr<AESEncryptor> encryptor;  
+    unique_ptr<AESDecryptor> decryptor;
 
 public:
-    FileProcess(string& file_path, const string mode_cryption, const Block& sourse_key)
-        : file_path(file_path), mode_cryption(mode_cryption), sourse_key(sourse_key) {};
+    FileProcess(const string& input_file_path, const string& output_file_path,
+        const string mode_cryption, const Block& sourse_key)
+        : input_file_path(input_file_path), output_file_path(output_file_path),
+        mode_cryption(mode_cryption), sourse_key(sourse_key) {};
 
-    void fileEncrypt() {
-        string output_path = "1.txt";
-        AESEncryptor encrypt;
-        encrypt.setKey(sourse_key);
-        AESDecryptor decrypt;
-        decrypt.setKey(sourse_key);
+    pair<Chunk, size_t> removePadding(Chunk& input_chunk) {
+        unsigned char paddingValue = input_chunk[15];
+
+        // Проверяем paddingValue
+        if (paddingValue == 0 || paddingValue > 16) {
+            throw runtime_error("Invalid padding value");
+        }
+
+        size_t dataSize = 16 - paddingValue;
+
+        // Проверяем структуру паддинга
+        for (size_t i = dataSize; i < 16; i++) {
+            if (input_chunk[i] != paddingValue) {
+                throw runtime_error("Invalid padding structure");
+            }
+        }
+
+        return { input_chunk, dataSize };  // Возвращаем чанк И реальный размер
+    }
+
+    void processFile() {
+        // Проверяем режим и создаем нужный объект ОДИН РАЗ
+        if (mode_cryption == "Encryption") {
+            encryptor = make_unique<AESEncryptor>();
+            encryptor->setKey(sourse_key);
+        }
+        else if (mode_cryption == "Decryption") {
+            decryptor = make_unique<AESDecryptor>();
+            decryptor->setKey(sourse_key);
+        }
 
         // Открываем выходной файл ОДИН РАЗ
-        ofstream outFile(output_path, ios::binary);
+        ofstream outFile(output_file_path, ios::binary);
         if (!outFile) throw runtime_error("Cannot open output file");
 
         while (true) {
             // 1. Получить буфер (прочитает файл если нужно)
-            Buffer& inputBuffer = fr.getBuffer(file_path);
+            Buffer& inputBuffer = fr.getBuffer(input_file_path);
 
             // 2. Обработать все чанки из ЭТОГО буфера
             while (fr.hasMoreChunksInBuffer()) {
                 Chunk plainChunk = fr.getChunk(inputBuffer);
                 Chunk processedChunk;
                 if (mode_cryption == "Encryption") {
-                    processedChunk = encrypt.encryptBlock(plainChunk);
+                    processedChunk = encryptor->encryptBlock(plainChunk);
                 }
                 else if (mode_cryption == "Decryption") {
-                    processedChunk = decrypt.decryptBlock(plainChunk);
+                    processedChunk = decryptor->decryptBlock(plainChunk);
+
+                    // ТОЛЬКО ДЛЯ ДЕШИФРОВАНИЯ: проверяем последний чанк
+                    if (fr.isEOF() && !fr.hasMoreChunksInBuffer()) {
+                        pair<Chunk, size_t> processedPair = removePadding(processedChunk);
+                        outFile.write(reinterpret_cast<char*>(processedPair.first.data()), processedPair.second);
+                        break;
+                    }
                 }
                 fw.postChunk(processedChunk);
 
@@ -226,4 +263,26 @@ public:
     }
 };
 
+class Test {
+public:
+    void enc(string input, string output, Block& key) {
+        FileProcess fp(input, output, "Encryption", key);
+        try {
+            fp.processFile();
+        }
+        catch (const exception& e) {
+            cerr << "Ошибка: " << e.what() << endl;
+        }
+    }
+
+    void dec(string input, string output, Block& key) {
+        FileProcess fp(input, output, "Decryption", key);
+        try {
+            fp.processFile();
+        }
+        catch (const exception& e) {
+            cerr << "Ошибка: " << e.what() << endl;
+        }
+    }
+};
 

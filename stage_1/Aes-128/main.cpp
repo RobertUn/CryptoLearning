@@ -19,14 +19,9 @@ int main() {
 	aes128decrypt.setKey(key);
 	aes128decrypt.decryptBlock(ciphertext);
 
-	string file_path = "2.txt";
+	string file_path = "1.txt";
 
-	FileCryption fc(file_path, "Decryption", key);
-	try {
-		fc.fileEncrypt();
-	}
-	catch (const exception& e) {
-		cerr << "Îøèáêà: " << e.what() << endl;
-		return 1;
-	}
+	Test ts;
+	ts.enc("1.txt", "2.txt", key);
+	//ts.dec("2.txt", "1.txt", key);
 }
