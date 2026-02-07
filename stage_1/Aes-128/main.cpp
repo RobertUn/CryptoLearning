@@ -1,5 +1,5 @@
-#include "Aes-128.cpp"
-#include "FileCryptor.cpp"
+#include "FileProcess.cpp"
+#include "FileUtils.cpp"
 
 
 int main() {
@@ -24,4 +24,14 @@ int main() {
 	Test ts;
 	ts.enc("1.txt", "2.txt", key);
 	//ts.dec("2.txt", "1.txt", key);
+
+	Backup bk("backups");
+	bk.copyFile("1.txt");
+	string a = bk.getLastCopiedPath();
+	cout << a << endl;
+
+	FileName fl;
+	string d = fl.addSuffix("123.txt");
+	cout << d << endl;
+
 }
